@@ -1,0 +1,880 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Workshop Ledger</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+
+* { box-sizing: border-box; }
+
+body {
+  --bg: #F1EBDD;
+  --surface: #FAF7F0;
+  --ink: #2A2420;
+  --ink-soft: #6B6259;
+  --border: #DDD3C0;
+  --radius: 4px;
+  font-family: 'IBM Plex Sans', -apple-system, sans-serif;
+  color: var(--ink);
+  background: var(--bg);
+  margin: 0;
+  min-height: 100vh;
+  padding: 32px 20px 56px;
+}
+
+.ibd-wrap { max-width: 1060px; margin: 0 auto; }
+
+.ibd-title { font-family: 'Fraunces', serif; font-size: 30px; font-weight: 500; margin: 0 0 4px; letter-spacing: -0.01em; }
+.ibd-subtitle { color: var(--ink-soft); font-size: 14px; margin: 0; max-width: 46ch; line-height: 1.5; }
+
+.ibd-tabs { display: flex; gap: 24px; margin: 22px 0 0; border-bottom: 1px solid var(--border); }
+.ibd-tab { background: none; border: none; font-family: inherit; font-size: 14px; font-weight: 500; padding: 8px 0; color: var(--ink-soft); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.ibd-tab:hover { color: var(--ink); }
+.ibd-tab.active { color: var(--ink); border-bottom-color: var(--ink); }
+
+.ibd-hero { display: flex; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin: 24px 0 32px; flex-wrap: wrap; }
+.ibd-hero-stat { flex: 1; min-width: 150px; padding: 16px 20px; border-right: 1px solid var(--border); }
+.ibd-hero-stat:last-child { border-right: none; }
+.ibd-hero-num { font-family: 'Fraunces', serif; font-size: 28px; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.ibd-hero-label { font-size: 12px; color: var(--ink-soft); margin-top: 4px; }
+
+.ibd-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: start; }
+@media (max-width: 820px) { .ibd-grid { grid-template-columns: 1fr; } }
+
+.ibd-section { margin-bottom: 24px; }
+.ibd-section-title { font-size: 13px; font-weight: 600; margin: 0 0 10px; }
+
+.ibd-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; }
+
+.ibd-field { display: flex; flex-direction: column; gap: 4px; }
+.ibd-field-label { font-size: 11px; color: var(--ink-soft); }
+.ibd-form-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 12px; }
+.ibd-input, .ibd-select { font-family: inherit; font-size: 14px; padding: 8px 9px; border: 1px solid var(--border); border-radius: var(--radius); background: #fff; color: var(--ink); }
+.ibd-input:focus, .ibd-select:focus, .ibd-btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
+.ibd-input-amount { width: 100px; }
+.ibd-input-date { width: 138px; }
+.ibd-input-note { flex: 1; min-width: 130px; }
+.ibd-select-source { width: 150px; }
+
+.ibd-btn { font-family: inherit; font-size: 14px; font-weight: 500; padding: 9px 14px; border-radius: var(--radius); border: 1px solid var(--ink); background: var(--ink); color: var(--bg); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.ibd-btn:hover { opacity: 0.85; }
+.ibd-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.ibd-btn-ghost { background: transparent; color: var(--ink-soft); border-color: var(--border); font-size: 12px; padding: 6px 10px; }
+
+.ibd-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border); }
+.ibd-row:last-child { border-bottom: none; }
+.ibd-swatch { width: 3px; align-self: stretch; border-radius: 2px; flex-shrink: 0; }
+.ibd-row-main { flex: 1; min-width: 0; }
+.ibd-row-label { font-size: 14px; font-weight: 500; overflow-wrap: anywhere; }
+.ibd-row-meta { font-size: 12px; color: var(--ink-soft); }
+.ibd-row-amount { font-variant-numeric: tabular-nums; font-weight: 500; white-space: nowrap; }
+.ibd-row-del { background: none; border: none; color: var(--ink-soft); cursor: pointer; padding: 4px; display: flex; }
+.ibd-row-del:hover { color: #A6432B; }
+
+.ibd-scroll { max-height: 250px; overflow-y: auto; }
+.ibd-empty { color: var(--ink-soft); font-size: 13px; padding: 6px 0 2px; }
+
+.ibd-legend-row { display: flex; align-items: center; gap: 8px; font-size: 13px; padding: 4px 0; }
+.ibd-legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.ibd-legend-amount { margin-left: auto; font-variant-numeric: tabular-nums; }
+.ibd-legend-pct { color: var(--ink-soft); font-size: 12px; width: 48px; text-align: right; }
+
+.ibd-donut-wrap { display: flex; justify-content: center; padding: 4px 0 14px; }
+
+.ibd-alloc-row { padding: 12px 0; border-bottom: 1px solid var(--border); }
+.ibd-alloc-row:last-child { border-bottom: none; }
+.ibd-alloc-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; gap: 8px; }
+.ibd-alloc-label { font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 8px; }
+.ibd-alloc-figures { font-size: 12px; color: var(--ink-soft); white-space: nowrap; }
+.ibd-alloc-figures strong { color: var(--ink); font-weight: 500; }
+.ibd-bar-track { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.ibd-bar-fill { height: 100%; border-radius: 3px; }
+
+.ibd-split-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
+.ibd-split-label { flex: 1; font-size: 13px; display: flex; align-items: center; gap: 8px; }
+.ibd-split-input { width: 60px; text-align: right; }
+.ibd-split-sum { font-size: 12px; margin-top: 8px; }
+.ibd-split-sum.ok { color: #6E8C5D; }
+.ibd-split-sum.bad { color: #A6432B; }
+
+.ibd-goal-row { display: flex; gap: 8px; align-items: flex-end; margin-bottom: 10px; }
+.ibd-goal-progress { font-size: 12px; color: var(--ink-soft); margin-top: 6px; }
+
+.ibd-footer { text-align: center; margin-top: 20px; }
+.ibd-savenote { font-size: 12px; color: #A6432B; text-align: center; margin-top: 10px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.26.3/babel.min.js"></script>
+
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useRef, useMemo } = React;
+
+const STORAGE_PREFIX = 'workshop-ledger:';
+const STORAGE_KEY = 'income-budget-v1';
+
+// Local storage stands in for the artifact's window.storage — everything
+// stays in this browser, on this computer.
+const storage = {
+  get(key) {
+    try {
+      const raw = window.localStorage.getItem(STORAGE_PREFIX + key);
+      return raw === null ? null : raw;
+    } catch (e) {
+      return null;
+    }
+  },
+  set(key, value) {
+    try {
+      window.localStorage.setItem(STORAGE_PREFIX + key, value);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  },
+};
+
+const SOURCES = {
+  furniture: { label: 'Furniture', color: '#9C5F2E' },
+  carpets: { label: 'Carpets', color: '#3E5C6B' },
+  upholstery: { label: 'Upholstery', color: '#B06A5A' },
+};
+const SOURCE_KEYS = Object.keys(SOURCES);
+
+const CATEGORIES = {
+  savings: { label: 'Savings', color: '#6E8C5D' },
+  expenses: { label: 'Expenses', color: '#A6432B' },
+  personal: { label: 'Restocking', color: '#C08A34' },
+};
+const CATEGORY_KEYS = Object.keys(CATEGORIES);
+
+const DEFAULT_STATE = {
+  transactions: [],
+  spends: [],
+  inventory: [],
+  allocations: { savings: 20, expenses: 50, personal: 30 },
+  savingsGoal: 0,
+};
+
+function formatCurrency(n) {
+  const v = Math.round(n || 0);
+  return 'R ' + v.toLocaleString('en-ZA');
+}
+
+function todayISO() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function formatDate(dateStr) {
+  try {
+    const d = new Date(dateStr + 'T00:00:00');
+    return d.toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' });
+  } catch (e) {
+    return dateStr;
+  }
+}
+
+function IconPlus({ size = 15 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+      <line x1="12" y1="5" x2="12" y2="19" />
+      <line x1="5" y1="12" x2="19" y2="12" />
+    </svg>
+  );
+}
+
+function IconTrash({ size = 14 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 7h16" />
+      <path d="M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3" />
+      <path d="M6 7l1 13a2 2 0 002 2h6a2 2 0 002-2l1-13" />
+    </svg>
+  );
+}
+
+function Donut({ data, size = 180, thickness = 26 }) {
+  const total = data.reduce((s, d) => s + d.value, 0);
+  const r = (size - thickness) / 2;
+  const cx = size / 2;
+  const cy = size / 2;
+  const C = 2 * Math.PI * r;
+  let acc = 0;
+  return (
+    <svg viewBox={`0 0 ${size} ${size}`} width="100%" height={size} style={{ maxWidth: size }}>
+      <g transform={`rotate(-90 ${cx} ${cy})`}>
+        <circle cx={cx} cy={cy} r={r} fill="none" stroke="var(--border)" strokeWidth={thickness} />
+        {total > 0 && data.map((d, i) => {
+          const frac = d.value / total;
+          const dash = frac * C;
+          const gap = C - dash;
+          const offset = -acc * C;
+          acc += frac;
+          return (
+            <circle
+              key={i}
+              cx={cx}
+              cy={cy}
+              r={r}
+              fill="none"
+              stroke={d.color}
+              strokeWidth={thickness}
+              strokeDasharray={`${dash} ${gap}`}
+              strokeDashoffset={offset}
+            />
+          );
+        })}
+      </g>
+    </svg>
+  );
+}
+
+function IncomeBudgetDashboard() {
+  const [data, setData] = useState(DEFAULT_STATE);
+  const [loading, setLoading] = useState(true);
+  const [saveError, setSaveError] = useState(false);
+  const [activeTab, setActiveTab] = useState('ledger');
+  const loaded = useRef(false);
+
+  const [saleSource, setSaleSource] = useState('furniture');
+  const [saleAmount, setSaleAmount] = useState('');
+  const [saleDate, setSaleDate] = useState(todayISO());
+  const [saleNote, setSaleNote] = useState('');
+
+  const [spendCategory, setSpendCategory] = useState('expenses');
+  const [spendAmount, setSpendAmount] = useState('');
+  const [spendDate, setSpendDate] = useState(todayISO());
+  const [spendNote, setSpendNote] = useState('');
+
+  const [invSource, setInvSource] = useState('furniture');
+  const [invName, setInvName] = useState('');
+  const [invQty, setInvQty] = useState('1');
+  const [invValue, setInvValue] = useState('');
+  const [invDate, setInvDate] = useState(todayISO());
+  const [invNote, setInvNote] = useState('');
+
+  const [allocDraft, setAllocDraft] = useState(DEFAULT_STATE.allocations);
+  const [goalDraft, setGoalDraft] = useState('');
+  const [resetArmed, setResetArmed] = useState(false);
+
+  useEffect(() => {
+    try {
+      const raw = storage.get(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        const merged = { ...DEFAULT_STATE, ...parsed };
+        setData(merged);
+        setAllocDraft(merged.allocations);
+        setGoalDraft(merged.savingsGoal ? String(merged.savingsGoal) : '');
+      }
+    } catch (e) {
+      // no saved data yet — start fresh
+    } finally {
+      setLoading(false);
+      loaded.current = true;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!loaded.current) return;
+    const ok = storage.set(STORAGE_KEY, JSON.stringify(data));
+    setSaveError(!ok);
+  }, [data]);
+
+  useEffect(() => {
+    if (!resetArmed) return;
+    const t = setTimeout(() => setResetArmed(false), 4000);
+    return () => clearTimeout(t);
+  }, [resetArmed]);
+
+  const totals = useMemo(() => {
+    const totalIncome = data.transactions.reduce((s, t) => s + t.amount, 0);
+    const bySource = {};
+    SOURCE_KEYS.forEach((k) => {
+      bySource[k] = data.transactions.filter((t) => t.source === k).reduce((s, t) => s + t.amount, 0);
+    });
+    const now = new Date();
+    const thisMonthIncome = data.transactions
+      .filter((t) => {
+        const d = new Date(t.date + 'T00:00:00');
+        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+      })
+      .reduce((s, t) => s + t.amount, 0);
+    const allocated = {};
+    const spentByCat = {};
+    const remaining = {};
+    CATEGORY_KEYS.forEach((k) => {
+      allocated[k] = (totalIncome * (data.allocations[k] || 0)) / 100;
+      spentByCat[k] = data.spends.filter((s) => s.category === k).reduce((s, x) => s + x.amount, 0);
+      remaining[k] = allocated[k] - spentByCat[k];
+    });
+    const totalSaved = remaining.savings;
+    return { totalIncome, bySource, thisMonthIncome, allocated, spentByCat, remaining, totalSaved };
+  }, [data]);
+
+  const inventoryTotals = useMemo(() => {
+    const bySource = {};
+    SOURCE_KEYS.forEach((k) => {
+      const items = data.inventory.filter((i) => i.source === k);
+      bySource[k] = {
+        qty: items.reduce((s, i) => s + i.quantity, 0),
+        value: items.reduce((s, i) => s + i.quantity * i.unitValue, 0),
+      };
+    });
+    const totalQty = SOURCE_KEYS.reduce((s, k) => s + bySource[k].qty, 0);
+    const totalValue = SOURCE_KEYS.reduce((s, k) => s + bySource[k].value, 0);
+    return { bySource, totalQty, totalValue };
+  }, [data.inventory]);
+
+  function addSale() {
+    const amt = parseFloat(saleAmount);
+    if (!amt || amt <= 0) return;
+    setData((d) => ({
+      ...d,
+      transactions: [
+        { id: `${Date.now()}-${Math.random()}`, source: saleSource, amount: amt, date: saleDate, note: saleNote.trim() },
+        ...d.transactions,
+      ],
+    }));
+    setSaleAmount('');
+    setSaleNote('');
+  }
+
+  function deleteSale(id) {
+    setData((d) => ({ ...d, transactions: d.transactions.filter((t) => t.id !== id) }));
+  }
+
+  function addSpend() {
+    const amt = parseFloat(spendAmount);
+    if (!amt || amt <= 0) return;
+    setData((d) => ({
+      ...d,
+      spends: [
+        { id: `${Date.now()}-${Math.random()}`, category: spendCategory, amount: amt, date: spendDate, note: spendNote.trim() },
+        ...d.spends,
+      ],
+    }));
+    setSpendAmount('');
+    setSpendNote('');
+  }
+
+  function deleteSpend(id) {
+    setData((d) => ({ ...d, spends: d.spends.filter((s) => s.id !== id) }));
+  }
+
+  function addInventoryItem() {
+    const qty = parseFloat(invQty);
+    const val = parseFloat(invValue);
+    if (!invName.trim() || !qty || qty <= 0 || isNaN(val) || val < 0) return;
+    setData((d) => ({
+      ...d,
+      inventory: [
+        { id: `${Date.now()}-${Math.random()}`, source: invSource, name: invName.trim(), quantity: qty, unitValue: val, date: invDate, note: invNote.trim() },
+        ...d.inventory,
+      ],
+    }));
+    setInvName('');
+    setInvQty('1');
+    setInvValue('');
+    setInvNote('');
+  }
+
+  function deleteInventoryItem(id) {
+    setData((d) => ({ ...d, inventory: d.inventory.filter((i) => i.id !== id) }));
+  }
+
+  const allocSum = CATEGORY_KEYS.reduce((s, k) => s + (parseFloat(allocDraft[k]) || 0), 0);
+
+  function saveAllocations() {
+    if (allocSum !== 100) return;
+    const clean = {};
+    CATEGORY_KEYS.forEach((k) => (clean[k] = parseFloat(allocDraft[k]) || 0));
+    setData((d) => ({ ...d, allocations: clean }));
+  }
+
+  function saveGoal() {
+    const g = parseFloat(goalDraft) || 0;
+    setData((d) => ({ ...d, savingsGoal: g }));
+  }
+
+  function handleReset() {
+    if (!resetArmed) {
+      setResetArmed(true);
+      return;
+    }
+    setData(DEFAULT_STATE);
+    setAllocDraft(DEFAULT_STATE.allocations);
+    setGoalDraft('');
+    setResetArmed(false);
+  }
+
+  const pieData = SOURCE_KEYS.map((k) => ({ value: totals.bySource[k], color: SOURCES[k].color })).filter((d) => d.value > 0);
+  const inventoryPieData = SOURCE_KEYS.map((k) => ({ value: inventoryTotals.bySource[k].value, color: SOURCES[k].color })).filter((d) => d.value > 0);
+
+  if (loading) {
+    return (
+      <div className="ibd-wrap">
+        <p className="ibd-subtitle">Loading your ledger…</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="ibd-wrap">
+      <h1 className="ibd-title">Workshop Ledger</h1>
+      <p className="ibd-subtitle">Furniture, carpets and upholstery sales, all flowing into one budget and savings system.</p>
+
+      <div className="ibd-tabs">
+        <button type="button" className={`ibd-tab ${activeTab === 'ledger' ? 'active' : ''}`} onClick={() => setActiveTab('ledger')}>
+          Ledger
+        </button>
+        <button type="button" className={`ibd-tab ${activeTab === 'inventory' ? 'active' : ''}`} onClick={() => setActiveTab('inventory')}>
+          Inventory
+        </button>
+      </div>
+
+      {activeTab === 'ledger' && (
+        <React.Fragment>
+          <div className="ibd-hero">
+            <div className="ibd-hero-stat">
+              <div className="ibd-hero-num">{formatCurrency(totals.totalIncome)}</div>
+              <div className="ibd-hero-label">Total income, all time</div>
+            </div>
+            <div className="ibd-hero-stat">
+              <div className="ibd-hero-num">{formatCurrency(totals.thisMonthIncome)}</div>
+              <div className="ibd-hero-label">This month</div>
+            </div>
+            <div className="ibd-hero-stat">
+              <div className="ibd-hero-num">{formatCurrency(totals.totalSaved)}</div>
+              <div className="ibd-hero-label">Saved so far</div>
+            </div>
+          </div>
+
+          <div className="ibd-grid">
+            <div>
+              <div className="ibd-section">
+                <h2 className="ibd-section-title">Log a sale</h2>
+                <div className="ibd-panel">
+                  <div className="ibd-form-row">
+                    <div className="ibd-field">
+                      <label className="ibd-field-label" htmlFor="sale-source">Source</label>
+                      <select id="sale-source" className="ibd-select ibd-select-source" value={saleSource} onChange={(e) => setSaleSource(e.target.value)}>
+                        {SOURCE_KEYS.map((k) => (
+                          <option key={k} value={k}>{SOURCES[k].label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="ibd-field">
+                      <label className="ibd-field-label" htmlFor="sale-amount">Amount (R)</label>
+                      <input
+                        id="sale-amount"
+                        className="ibd-input ibd-input-amount"
+                        type="number"
+                        min="0"
+                        placeholder="0"
+                        value={saleAmount}
+                        onChange={(e) => setSaleAmount(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && addSale()}
+                      />
+                    </div>
+                    <div className="ibd-field">
+                      <label className="ibd-field-label" htmlFor="sale-date">Date</label>
+                      <input id="sale-date" className="ibd-input ibd-input-date" type="date" value={saleDate} onChange={(e) => setSaleDate(e.target.value)} />
+                    </div>
+                    <div className="ibd-field" style={{ flex: 1, minWidth: 130 }}>
+                      <label className="ibd-field-label" htmlFor="sale-note">Note (optional)</label>
+                      <input
+                        id="sale-note"
+                        className="ibd-input ibd-input-note"
+                        type="text"
+                        placeholder="e.g. Oak dining table"
+                        value={saleNote}
+                        onChange={(e) => setSaleNote(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && addSale()}
+                      />
+                    </div>
+                  </div>
+                  <button type="button" className="ibd-btn" onClick={addSale} disabled={!saleAmount || parseFloat(saleAmount) <= 0}>
+                    <IconPlus /> Add sale
+                  </button>
+                </div>
+              </div>
+
+              <div className="ibd-section">
+                <h2 className="ibd-section-title">Recent sales</h2>
+                <div className="ibd-panel">
+                  {data.transactions.length === 0 ? (
+                    <p className="ibd-empty">No sales logged yet — add your first one above.</p>
+                  ) : (
+                    <div className="ibd-scroll">
+                      {data.transactions.map((t) => (
+                        <div className="ibd-row" key={t.id}>
+                          <div className="ibd-swatch" style={{ background: SOURCES[t.source].color }} />
+                          <div className="ibd-row-main">
+                            <div className="ibd-row-label">{SOURCES[t.source].label}{t.note ? ` — ${t.note}` : ''}</div>
+                            <div className="ibd-row-meta">{formatDate(t.date)}</div>
+                          </div>
+                          <div className="ibd-row-amount">{formatCurrency(t.amount)}</div>
+                          <button type="button" className="ibd-row-del" onClick={() => deleteSale(t.id)} aria-label="Delete sale">
+                            <IconTrash />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="ibd-section">
+                <h2 className="ibd-section-title">Income by source</h2>
+                <div className="ibd-panel">
+                  {pieData.length === 0 ? (
+                    <p className="ibd-empty">Log a sale to see the breakdown here.</p>
+                  ) : (
+                    <React.Fragment>
+                      <div className="ibd-donut-wrap"><Donut data={pieData} /></div>
+                      {SOURCE_KEYS.map((k) => (
+                        <div className="ibd-legend-row" key={k}>
+                          <span className="ibd-legend-dot" style={{ background: SOURCES[k].color }} />
+                          <span>{SOURCES[k].label}</span>
+                          <span className="ibd-legend-pct">{totals.totalIncome > 0 ? Math.round((totals.bySource[k] / totals.totalIncome) * 100) : 0}%</span>
+                          <span className="ibd-legend-amount">{formatCurrency(totals.bySource[k])}</span>
+                        </div>
+                      ))}
+                    </React.Fragment>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div className="ibd-section">
+                <h2 className="ibd-section-title">Savings goal</h2>
+                <div className="ibd-panel">
+                  <div className="ibd-goal-row">
+                    <div className="ibd-field" style={{ flex: 1 }}>
+                      <label className="ibd-field-label" htmlFor="goal-input">Target amount (R)</label>
+                      <input id="goal-input" className="ibd-input" type="number" min="0" placeholder="e.g. 20000" value={goalDraft} onChange={(e) => setGoalDraft(e.target.value)} style={{ width: '100%' }} />
+                    </div>
+                    <button type="button" className="ibd-btn" onClick={saveGoal}>Set</button>
+                  </div>
+                  {data.savingsGoal > 0 ? (
+                    <React.Fragment>
+                      <div className="ibd-bar-track">
+                        <div
+                          className="ibd-bar-fill"
+                          style={{ width: `${Math.min(100, (totals.totalSaved / data.savingsGoal) * 100)}%`, background: CATEGORIES.savings.color }}
+                        />
+                      </div>
+                      <div className="ibd-goal-progress">
+                        {formatCurrency(totals.totalSaved)} of {formatCurrency(data.savingsGoal)} ({Math.min(100, Math.round((totals.totalSaved / data.savingsGoal) * 100))}%)
+                      </div>
+                    </React.Fragment>
+                  ) : (
+                    <p className="ibd-empty" style={{ paddingBottom: 0 }}>Set a target to track progress toward it.</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="ibd-section">
+                <h2 className="ibd-section-title">How income splits</h2>
+                <div className="ibd-panel">
+                  {CATEGORY_KEYS.map((k) => (
+                    <div className="ibd-split-row" key={k}>
+                      <span className="ibd-split-label">
+                        <span className="ibd-legend-dot" style={{ background: CATEGORIES[k].color }} />
+                        {CATEGORIES[k].label}
+                      </span>
+                      <input
+                        className="ibd-input ibd-split-input"
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={allocDraft[k]}
+                        onChange={(e) => setAllocDraft((a) => ({ ...a, [k]: e.target.value }))}
+                      />
+                      <span style={{ fontSize: 13, color: 'var(--ink-soft)' }}>%</span>
+                    </div>
+                  ))}
+                  <div className={`ibd-split-sum ${allocSum === 100 ? 'ok' : 'bad'}`}>
+                    Total: {allocSum}% {allocSum !== 100 ? '— must equal 100%' : ''}
+                  </div>
+                  <div style={{ marginTop: 10 }}>
+                    <button type="button" className="ibd-btn" onClick={saveAllocations} disabled={allocSum !== 100}>Save split</button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="ibd-section">
+                <h2 className="ibd-section-title">Budget buckets</h2>
+                <div className="ibd-panel">
+                  {totals.totalIncome === 0 && <p className="ibd-empty">Log sales to see money move into each bucket.</p>}
+                  {CATEGORY_KEYS.map((k) => {
+                    const pct = totals.allocated[k] > 0 ? Math.min(100, (totals.spentByCat[k] / totals.allocated[k]) * 100) : 0;
+                    const over = totals.remaining[k] < 0;
+                    return (
+                      <div className="ibd-alloc-row" key={k}>
+                        <div className="ibd-alloc-top">
+                          <span className="ibd-alloc-label">
+                            <span className="ibd-legend-dot" style={{ background: CATEGORIES[k].color }} />
+                            {CATEGORIES[k].label} · {data.allocations[k]}%
+                          </span>
+                          <span className="ibd-alloc-figures">
+                            <strong>{formatCurrency(totals.remaining[k])}</strong> left of {formatCurrency(totals.allocated[k])}
+                          </span>
+                        </div>
+                        <div className="ibd-bar-track">
+                          <div className="ibd-bar-fill" style={{ width: `${pct}%`, background: over ? '#A6432B' : CATEGORIES[k].color }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="ibd-section">
+                <h2 className="ibd-section-title">Log spending</h2>
+                <div className="ibd-panel">
+                  <div className="ibd-form-row">
+                    <div className="ibd-field">
+                      <label className="ibd-field-label" htmlFor="spend-category">Bucket</label>
+                      <select id="spend-category" className="ibd-select ibd-select-source" value={spendCategory} onChange={(e) => setSpendCategory(e.target.value)}>
+                        {CATEGORY_KEYS.map((k) => (
+                          <option key={k} value={k}>{CATEGORIES[k].label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="ibd-field">
+                      <label className="ibd-field-label" htmlFor="spend-amount">Amount (R)</label>
+                      <input
+                        id="spend-amount"
+                        className="ibd-input ibd-input-amount"
+                        type="number"
+                        min="0"
+                        placeholder="0"
+                        value={spendAmount}
+                        onChange={(e) => setSpendAmount(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && addSpend()}
+                      />
+                    </div>
+                    <div className="ibd-field">
+                      <label className="ibd-field-label" htmlFor="spend-date">Date</label>
+                      <input id="spend-date" className="ibd-input ibd-input-date" type="date" value={spendDate} onChange={(e) => setSpendDate(e.target.value)} />
+                    </div>
+                    <div className="ibd-field" style={{ flex: 1, minWidth: 130 }}>
+                      <label className="ibd-field-label" htmlFor="spend-note">Note (optional)</label>
+                      <input
+                        id="spend-note"
+                        className="ibd-input ibd-input-note"
+                        type="text"
+                        placeholder="e.g. Fabric offcuts"
+                        value={spendNote}
+                        onChange={(e) => setSpendNote(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && addSpend()}
+                      />
+                    </div>
+                  </div>
+                  <button type="button" className="ibd-btn" onClick={addSpend} disabled={!spendAmount || parseFloat(spendAmount) <= 0}>
+                    <IconPlus /> Add spend
+                  </button>
+                </div>
+              </div>
+
+              <div className="ibd-section">
+                <h2 className="ibd-section-title">Recent spending</h2>
+                <div className="ibd-panel">
+                  {data.spends.length === 0 ? (
+                    <p className="ibd-empty">Nothing logged yet.</p>
+                  ) : (
+                    <div className="ibd-scroll">
+                      {data.spends.map((s) => (
+                        <div className="ibd-row" key={s.id}>
+                          <div className="ibd-swatch" style={{ background: CATEGORIES[s.category].color }} />
+                          <div className="ibd-row-main">
+                            <div className="ibd-row-label">{CATEGORIES[s.category].label}{s.note ? ` — ${s.note}` : ''}</div>
+                            <div className="ibd-row-meta">{formatDate(s.date)}</div>
+                          </div>
+                          <div className="ibd-row-amount">{formatCurrency(s.amount)}</div>
+                          <button type="button" className="ibd-row-del" onClick={() => deleteSpend(s.id)} aria-label="Delete spend">
+                            <IconTrash />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </React.Fragment>
+      )}
+
+      {activeTab === 'inventory' && (
+        <React.Fragment>
+          <div className="ibd-hero">
+            <div className="ibd-hero-stat">
+              <div className="ibd-hero-num">{formatCurrency(inventoryTotals.totalValue)}</div>
+              <div className="ibd-hero-label">Total stock value</div>
+            </div>
+            <div className="ibd-hero-stat">
+              <div className="ibd-hero-num">{inventoryTotals.totalQty}</div>
+              <div className="ibd-hero-label">Units in stock</div>
+            </div>
+            <div className="ibd-hero-stat">
+              <div className="ibd-hero-num">{formatCurrency(totals.remaining.personal)}</div>
+              <div className="ibd-hero-label">Available to restock</div>
+            </div>
+          </div>
+
+          <div className="ibd-grid">
+            <div>
+              <div className="ibd-section">
+                <h2 className="ibd-section-title">Add stock</h2>
+                <div className="ibd-panel">
+                  <div className="ibd-form-row">
+                    <div className="ibd-field">
+                      <label className="ibd-field-label" htmlFor="inv-source">Source</label>
+                      <select id="inv-source" className="ibd-select ibd-select-source" value={invSource} onChange={(e) => setInvSource(e.target.value)}>
+                        {SOURCE_KEYS.map((k) => (
+                          <option key={k} value={k}>{SOURCES[k].label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="ibd-field" style={{ flex: 1, minWidth: 150 }}>
+                      <label className="ibd-field-label" htmlFor="inv-name">Item</label>
+                      <input
+                        id="inv-name"
+                        className="ibd-input"
+                        type="text"
+                        placeholder="e.g. Oak coffee table"
+                        value={invName}
+                        onChange={(e) => setInvName(e.target.value)}
+                        style={{ width: '100%' }}
+                      />
+                    </div>
+                  </div>
+                  <div className="ibd-form-row">
+                    <div className="ibd-field">
+                      <label className="ibd-field-label" htmlFor="inv-qty">Quantity</label>
+                      <input
+                        id="inv-qty"
+                        className="ibd-input ibd-input-amount"
+                        type="number"
+                        min="0"
+                        value={invQty}
+                        onChange={(e) => setInvQty(e.target.value)}
+                      />
+                    </div>
+                    <div className="ibd-field">
+                      <label className="ibd-field-label" htmlFor="inv-value">Value each (R)</label>
+                      <input
+                        id="inv-value"
+                        className="ibd-input ibd-input-amount"
+                        type="number"
+                        min="0"
+                        placeholder="0"
+                        value={invValue}
+                        onChange={(e) => setInvValue(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && addInventoryItem()}
+                      />
+                    </div>
+                    <div className="ibd-field">
+                      <label className="ibd-field-label" htmlFor="inv-date">Date added</label>
+                      <input id="inv-date" className="ibd-input ibd-input-date" type="date" value={invDate} onChange={(e) => setInvDate(e.target.value)} />
+                    </div>
+                    <div className="ibd-field" style={{ flex: 1, minWidth: 130 }}>
+                      <label className="ibd-field-label" htmlFor="inv-note">Note (optional)</label>
+                      <input
+                        id="inv-note"
+                        className="ibd-input ibd-input-note"
+                        type="text"
+                        placeholder="e.g. From offcut fabric batch"
+                        value={invNote}
+                        onChange={(e) => setInvNote(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && addInventoryItem()}
+                      />
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="ibd-btn"
+                    onClick={addInventoryItem}
+                    disabled={!invName.trim() || !invQty || parseFloat(invQty) <= 0 || invValue === '' || parseFloat(invValue) < 0}
+                  >
+                    <IconPlus /> Add item
+                  </button>
+                </div>
+              </div>
+
+              <div className="ibd-section">
+                <h2 className="ibd-section-title">All stock</h2>
+                <div className="ibd-panel">
+                  {data.inventory.length === 0 ? (
+                    <p className="ibd-empty">No stock logged yet — add your first item above.</p>
+                  ) : (
+                    <div className="ibd-scroll">
+                      {data.inventory.map((i) => (
+                        <div className="ibd-row" key={i.id}>
+                          <div className="ibd-swatch" style={{ background: SOURCES[i.source].color }} />
+                          <div className="ibd-row-main">
+                            <div className="ibd-row-label">{i.name}{i.note ? ` — ${i.note}` : ''}</div>
+                            <div className="ibd-row-meta">Qty {i.quantity} · {formatDate(i.date)}</div>
+                          </div>
+                          <div className="ibd-row-amount">{formatCurrency(i.quantity * i.unitValue)}</div>
+                          <button type="button" className="ibd-row-del" onClick={() => deleteInventoryItem(i.id)} aria-label="Delete item">
+                            <IconTrash />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div className="ibd-section">
+                <h2 className="ibd-section-title">Stock by source</h2>
+                <div className="ibd-panel">
+                  {inventoryPieData.length === 0 ? (
+                    <p className="ibd-empty">Add stock to see the breakdown here.</p>
+                  ) : (
+                    <React.Fragment>
+                      <div className="ibd-donut-wrap"><Donut data={inventoryPieData} /></div>
+                      {SOURCE_KEYS.map((k) => (
+                        <div className="ibd-legend-row" key={k}>
+                          <span className="ibd-legend-dot" style={{ background: SOURCES[k].color }} />
+                          <span>{SOURCES[k].label}</span>
+                          <span className="ibd-legend-pct">{inventoryTotals.bySource[k].qty} units</span>
+                          <span className="ibd-legend-amount">{formatCurrency(inventoryTotals.bySource[k].value)}</span>
+                        </div>
+                      ))}
+                    </React.Fragment>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </React.Fragment>
+      )}
+
+      <div className="ibd-footer">
+        <button type="button" className="ibd-btn ibd-btn-ghost" onClick={handleReset}>
+          {resetArmed ? 'Click again to confirm reset' : 'Reset all data'}
+        </button>
+      </div>
+      {saveError && <p className="ibd-savenote">Your last change may not have saved — your browser's storage may be full or disabled (private browsing blocks it).</p>}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<IncomeBudgetDashboard />);
+</script>
+</body>
+</html>
